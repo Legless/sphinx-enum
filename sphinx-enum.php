@@ -19,21 +19,23 @@
 	}
 
 	echo "Sphinx enumerator \n";
-	echo "Usage: php sphinx-enum.php -target=(host or file) [-p=9307] [-e] [-d] [-h] \n";
+	echo "Usage: php sphinx-enum.php -target=(host or file) [-p=9307] [-e] [-d] [-m] [-i] [-h] \n";
 	echo "       php sphinx-enum.php -h for help \n";
 	echo "\n";
 
 	if( in_array( 'h', $flags ) ) {
 		echo "\n";
 		echo "HELP: \n";
-		echo "     -h - this help \n";
-		echo "     -target= - host, ip or file with host list \n";
-		echo "     -p - port, default 9306 \n";
-		echo "     -e - enum tables/indexes \n";
-		echo "     -d - describe index structure \n";
+		echo "        -h - this help \n";
+		echo "  -target= - host, ip or file with host list \n";
+		echo "        -p - port, default 9306 \n";
+		echo "        -m - get server meta information \n";
+		echo "        -e - enum tables/indexes \n";
+		echo "        -d - describe index structure, requires -e \n";
+		echo "        -i - get index meta information, requires -e \n";
 		echo "\n";
 		echo "\n";
-		die();
+		die( );
 	}
 
 	if( !isset( $args[ 'target' ] ) ) {
@@ -109,6 +111,62 @@
 		echo "[+] connected \n";
 		echo "    version: " . $version . "\n";
 
+		if( in_array( 'm', $flags ) ) {
+			$res = sphinx_query( $conn, "SHOW STATUS" );
+			$rows = sphinx_rows( $conn, $res );
+
+			echo "    server status: \n";
+			foreach( $rows as $stat ) {
+				echo "        ";
+				echo $stat[ 'Counter' ];
+				echo " = ";
+				echo $stat[ 'Value' ];
+				echo "\n";
+			}
+
+			$res = sphinx_query( $conn, "SHOW AGENT STATUS" );
+			$rows = sphinx_rows( $conn, $res );
+
+			echo "    agent status: \n";
+			foreach( $rows as $stat ) {
+				echo "        ";
+				echo $stat[ 'Key' ];
+				echo " = ";
+				echo $stat[ 'Value' ];
+				echo "\n";
+			}
+
+			$res = sphinx_query( $conn, "SHOW THREADS" );
+			$rows = sphinx_rows( $conn, $res );
+
+			echo "    threads: \n";
+			foreach( $rows as $stat ) {
+				echo "        ";
+				echo $stat[ 'Tid' ];
+				echo " | ";
+				echo $stat[ 'Proto' ];
+				echo " | ";
+				echo $stat[ 'State' ];
+				echo " | ";
+				echo $stat[ 'Time' ];
+				echo " | ";
+				echo $stat[ 'Info' ];
+				echo "\n";
+			}
+
+			$res = sphinx_query( $conn, "SHOW VARIABLES" );
+			$rows = sphinx_rows( $conn, $res );
+
+			echo "    variables: \n";
+			foreach( $rows as $stat ) {
+				echo "        ";
+				echo $stat[ 'Variable_name' ];
+				echo " = ";
+				echo $stat[ 'Value' ];
+				echo "\n";
+			}
+		}
+
 		if( !in_array( 'e', $flags ) ) {
 			continue ;
 		}
@@ -121,25 +179,41 @@
 			return $index[ 'Index' ];
 		}, $rows );
 
-		echo "    found " . count( $indexes ) . " indexes: \n";
+		echo "[+] found " . count( $indexes ) . " indexes: \n";
 
 		foreach( $indexes as $index ) {
-			echo "      - " . $index . "\n";
+			echo "[+]     index " . $index . "\n";
 
-			// get index structure if needed
-			if( !in_array( 'd', $flags ) ) {
-				continue ;
+			// get index meta if needed
+			if( in_array( 'i', $flags ) ) {
+				echo "[+]     " . $index . " status \n";
+
+				$res = sphinx_query( $conn, "SHOW INDEX " . $index . " STATUS" );
+				$status = sphinx_rows( $conn, $res );
+
+				foreach( $status as $col_info ) {
+					echo "          ";
+					echo $col_info[ 'Variable_name' ];
+					echo "\t(";
+					echo $col_info[ 'Value' ];
+					echo ")\n";
+				}
 			}
 
-			$res = sphinx_query( $conn, "DESCRIBE " . $index );
-			$index_columns = sphinx_rows( $conn, $res );
+			// get index structure if needed
+			if( in_array( 'd', $flags ) ) {
+				echo "[+]     " . $index . " structure \n";
 
-			foreach( $index_columns as $col_info ) {
-				echo "          ";
-				echo $col_info[ 'Field' ];
-				echo "\t(";
-				echo $col_info[ 'Type' ];
-				echo ")\n";
+				$res = sphinx_query( $conn, "DESCRIBE " . $index );
+				$index_columns = sphinx_rows( $conn, $res );
+
+				foreach( $index_columns as $col_info ) {
+					echo "          ";
+					echo $col_info[ 'Field' ];
+					echo "\t(";
+					echo $col_info[ 'Type' ];
+					echo ")\n";
+				}
 			}
 		}
 	}
