@@ -4,7 +4,7 @@ Simple script to enumerate public sphinx servers, and it's contents.
 
 ### Usage
 ````
-Usage: php sphinx-enum.php -target=(host or file) [-p=9307] [-e] [-d] [-m] [-i] [-loot=dir]
+Usage: php sphinx-enum.php -target=(host or file) [-p=9306] [-e] [-d] [-m] [-i] [-loot=dir]
        php sphinx-enum.php -h for help
 
       -h - this help
