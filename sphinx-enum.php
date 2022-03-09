@@ -206,7 +206,13 @@
 
 				foreach( $index_columns as $col_info ) {
 					echo "          ";
-					echo $col_info[ 'Field' ];
+
+					if( isset( $col_info[ 'Agent' ] ) ) {
+						echo "(agent) ". $col_info[ 'Agent' ];
+					} else {
+						echo $col_info[ 'Field' ];
+					}
+
 					echo "\t(";
 					echo $col_info[ 'Type' ];
 					echo ")\n";
