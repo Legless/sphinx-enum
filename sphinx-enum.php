@@ -173,16 +173,13 @@
 
 		// get and clean index list
 		$res = sphinx_query( $conn, "SHOW TABLES" );
-		$rows = sphinx_rows( $conn, $res );
-		$indexes = array_map( function ( $index ) {
-			// we dont care about index type?
-			return $index[ 'Index' ];
-		}, $rows );
+		$indexes = sphinx_rows( $conn, $res );
 
 		echo "[+] found " . count( $indexes ) . " indexes: \n";
 
-		foreach( $indexes as $index ) {
-			echo "[+]     index " . $index . "\n";
+		foreach( $indexes as $index_info ) {
+			$index = $index_info[ 'Index' ];
+			echo "[+]     index " . $index_info[ 'Index' ] . " (". $index_info[ 'Type' ] .")\n";
 
 			// get index meta if needed
 			if( in_array( 'i', $flags ) ) {
