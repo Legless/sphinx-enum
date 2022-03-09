@@ -16,4 +16,6 @@ Usage: php sphinx-enum.php -target=(host or file) [-p=9307] [-e] [-d] [-m] [-i] 
       -i - get index meta information, requires -e
   -loot= - directory to save index contents, dont save if not specified 
            [!] files will be overwritten
+ -limit= - limit row count for looting for each index, default - 0 (loot all index)
+ -batch= - set batch size for looting, default=1000
 ````
