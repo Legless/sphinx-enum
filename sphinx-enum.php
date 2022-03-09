@@ -1,4 +1,7 @@
 <?php
+	define( 'SPHINX_ENUMERATOR', true );
+	include_once "functions.php";
+
 	$args = [ ];
 	$flags = [ ];
 
@@ -19,7 +22,7 @@
 	}
 
 	echo "Sphinx enumerator \n";
-	echo "Usage: php sphinx-enum.php -target=(host or file) [-p=9307] [-e] [-d] [-m] [-i] [-h] \n";
+	echo "Usage: php sphinx-enum.php -target=(host or file) [-p=9307] [-e] [-d] [-m] [-i] [-loot=dir] \n";
 	echo "       php sphinx-enum.php -h for help \n";
 	echo "\n";
 
@@ -33,6 +36,8 @@
 		echo "        -e - enum tables/indexes \n";
 		echo "        -d - describe index structure, requires -e \n";
 		echo "        -i - get index meta information, requires -e \n";
+		echo "    -loot= - directory to save index contents, dont save if not specified, \n";
+		echo "             [!] files will be overwritten \n";
 		echo "\n";
 		echo "\n";
 		die( );
@@ -40,6 +45,22 @@
 
 	if( !isset( $args[ 'target' ] ) ) {
 		die( "[!] Error: -target is required \n" );
+	}
+
+	if( $loot_dir = $args[ 'loot' ] ?? false ) {
+		// lets clean and check looting directory
+		if( is_file( $loot_dir ) ) {
+			die( "[!] Error: -loot is not a directory \n" );
+		}
+
+		if( !is_dir( $loot_dir ) ) {
+			mkdir( $loot_dir, 0777, true ) or die( "[!] Error: can't create $loot_dir \n" );
+		}
+
+		// add trailing slash
+		if( substr( $loot_dir, -1 ) !== '/' ) {
+			$loot_dir .= '/';
+		}
 	}
 
 	if( is_file( $args[ 'target' ] ) ) {
@@ -57,37 +78,8 @@
 	$hosts = array_values( $hosts );
 	$total = count( $hosts );
 
-	/**
-	 * @param mysqli $conn
-	 * @param string $sql
-	 * @return bool|mysqli_result
-	 * @todo move to another file
-	 */
-	function sphinx_query( $conn, $sql ) {
-		return mysqli_query( $conn, $sql );
-	}
-
-	/**
-	 * @param mysqli $conn
-	 * @param bool|mysqli_result $result
-	 * @return array
-	 * @todo move to another file
-	 */
-	function sphinx_rows( $conn, $result ) {
-		// return empty array on query error
-		if( !$result ) {
-			return [ ];
-		}
-
-		// fetch & return
-		$rows = [ ];
-
-		while( $row = $result->fetch_assoc( ) ) {
-			$rows[ ] = $row;
-		}
-
-		return $rows;
-	}
+	$all_indexes = [ ];
+	$working_hosts = [ ];
 
 	foreach( $hosts as $k => $host ) {
 		$host = $host . ':' . ( $args[ 'p' ] ?? 9306 );
@@ -95,7 +87,8 @@
 		echo "\n";
 		echo "[*] $host - $k of $total \n";
 
-		@ $conn = mysqli_connect( $host, '', '' );
+		$conn = sphinx_connect( $host );
+
 		if( !$conn ) {
 			echo "[!] connection error: " . mysqli_connect_error( ) . "\n";
 
@@ -107,9 +100,11 @@
 			continue ;
 		}
 
+		$working_hosts[ ] = $host;
 		$version = mysqli_get_server_info( $conn );
+
 		echo "[+] connected \n";
-		echo "    version: " . $version . "\n";
+		echo "    version: $version \n";
 
 		if( in_array( 'm', $flags ) ) {
 			$res = sphinx_query( $conn, "SHOW STATUS" );
@@ -176,6 +171,7 @@
 		$indexes = sphinx_rows( $conn, $res );
 
 		echo "[+] found " . count( $indexes ) . " indexes: \n";
+		$all_indexes[ $host ] = $indexes;
 
 		foreach( $indexes as $index_info ) {
 			$index = $index_info[ 'Index' ];
@@ -219,5 +215,10 @@
 				}
 			}
 		}
+
+		mysqli_close( $conn );
 	}
 
+	if( $loot_dir ) {
+		include_once "loot.php";
+	}
