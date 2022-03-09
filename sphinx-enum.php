@@ -84,7 +84,10 @@
 	$working_hosts = [ ];
 
 	foreach( $hosts as $k => $host ) {
-		$host = $host . ':' . ( $args[ 'p' ] ?? 9306 );
+		if( strpos( $host, ':' ) === false ) {
+			// add port if there's none specified in host addr
+			$host = $host . ':' . ( $args[ 'p' ] ?? 9306 );
+		}
 
 		echo "\n";
 		echo "[*] $host - $k of $total \n";
