@@ -22,7 +22,7 @@
 	}
 
 	echo "Sphinx enumerator \n";
-	echo "Usage: php sphinx-enum.php -target=(host or file) [-p=9307] [-e] [-d] [-m] [-i] [-loot=dir] \n";
+	echo "Usage: php sphinx-enum.php -target=(host or file) [-p=9307] [-edmi] [...] [-loot=dir] \n";
 	echo "       php sphinx-enum.php -h for help \n";
 	echo "\n";
 
@@ -38,6 +38,8 @@
 		echo "        -i - get index meta information, requires -e \n";
 		echo "    -loot= - directory to save index contents, dont save if not specified, \n";
 		echo "             [!] files will be overwritten \n";
+		echo "   -limit= - limit row count for looting for each index, default - 0 (loot all index) \n";
+		echo "   -batch= - set batch size for looting, default=1000 \n";
 		echo "\n";
 		echo "\n";
 		die( );
@@ -190,6 +192,32 @@
 					echo "\t(";
 					echo $col_info[ 'Value' ];
 					echo ")\n";
+				}
+
+				$res = sphinx_query( $conn, "SHOW INDEX " . $index . " SETTINGS" );
+				$settings = sphinx_rows( $conn, $res );
+
+				if( $settings_text = ( $settings[ 0 ][ 'Value' ] ?? null ) ) {
+					echo "[+]     " . $index . " settings \n";
+
+					// clean and display index settings block
+					$settings_arr = explode( "\n", $settings_text );
+					foreach( $settings_arr as $row ) {
+						$row = trim( $row );
+						$opt = explode( '=', $row );
+
+						if( !isset( $opt[ 1 ] ) ) {
+							// skip empty ?
+							// @todo: check if sphinx index can has attr with no values?
+							continue ;
+						}
+
+						echo "          ";
+						echo trim( $opt[ 0 ] );
+						echo "\t= ";
+						echo trim( $opt[ 1 ] );
+						echo "\n";
+					}
 				}
 			}
 

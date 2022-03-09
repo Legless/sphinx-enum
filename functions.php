@@ -41,3 +41,30 @@
 
 		return $rows;
 	}
+
+	/**
+	 * @param string $target
+	 * @param array[][] $rows
+	 * @return bool
+	 */
+	function save_csv( $target, $rows ) {
+		if( !count( $rows ) ) {
+			return true;
+		}
+
+		@$fp = fopen( $target, 'w+' );
+
+		if( !$fp ) {
+			return false;
+		}
+
+		$headers = array_keys( $rows[ 0 ] );
+		fputcsv( $fp, $headers );
+
+		foreach( $rows as $row ) {
+			fputcsv( $fp, $row );
+		}
+
+		fclose( $fp );
+		return true;
+	}

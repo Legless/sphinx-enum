@@ -36,15 +36,38 @@
 			$index = $index[ 'Index' ];
 			echo "    looting $index \n";
 
+			$res = sphinx_query( $conn, "SHOW INDEX " . $index . " STATUS" );
+			$status = sphinx_rows( $conn, $res );
+			save_csv( $target_dir . $index . '_status.csv', $status );
+
+			$res = sphinx_query( $conn, "SHOW INDEX " . $index . " SETTINGS" );
+			$settings = sphinx_rows( $conn, $res );
+			save_csv( $target_dir . $index . '_settings.csv', $settings );
+
+			$res = sphinx_query( $conn, "DESCRIBE " . $index );
+			$struct = sphinx_rows( $conn, $res );
+			save_csv( $target_dir . $index . '_struct.csv', $struct );
+
 			// old versions of sphinx dont support /as/ statement
 			$res = sphinx_query( $conn, "SELECT min(id), max(id), count(*) FROM $index" );
-			$minmax = sphinx_rows( $conn, $res )[ 0 ];
+			$rows = sphinx_rows( $conn, $res );
+
+			if( !count( $rows ) ) {
+				echo "[-] Can't get index stats, skip looting rows \n";
+				continue ;
+			}
+
+			$minmax = $rows[ 0 ];
 
 			/** @todo set a max rows count to loot for very large indexes ? */
 			$rows_count = 0;
 			$rows_total = $minmax[ 'count(*)' ];
 
 			echo "      $rows_total rows total \n";
+			if( $loot_limit = ( $args[ 'limit' ] ?? 0 ) ) {
+				echo "[!]   loot limit set to $loot_limit rows \n";
+			}
+
 			$id_from = $minmax[ 'min(id)' ];
 
 			// create and overwrite file
@@ -53,11 +76,17 @@
 
 			while ( true ) {
 				/** @todo: set batch size by script param */
-				$res = sphinx_query( $conn, "SELECT * FROM $index WHERE id > $id_from ORDER BY id ASC LIMIT 250" );
+				$batch = $args[ 'batch' ] ?? 1000;
+				$res = sphinx_query( $conn, "SELECT * FROM $index WHERE id > $id_from ORDER BY id ASC LIMIT $batch" );
 				$rows = sphinx_rows( $conn, $res );
 
 				/** @todo: show a nice overall progress with time measurement */
 				echo "      row $rows_count / $rows_total \r";
+
+				if( $loot_limit && $rows_count > $loot_limit ) {
+					echo "[!]   loot limit is hit \n";
+					break ;
+				}
 
 				if( !count( $rows ) ) {
 					echo "      index done \n";
