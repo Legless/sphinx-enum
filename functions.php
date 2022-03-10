@@ -6,10 +6,20 @@
 	/**
 	 * @todo: make a nice class of it
 	 */
-
 	function sphinx_connect( $host ) {
-		@ $conn = mysqli_connect( $host, '', '' );
-		return $conn;
+		global $args; // :(
+		$timeout = $args[ 'timeout' ] ?? 5;
+
+		$conn = mysqli_init( );
+		mysqli_options( $conn, MYSQLI_OPT_CONNECT_TIMEOUT, $timeout );
+		mysqli_options( $conn, MYSQLI_OPT_READ_TIMEOUT, $timeout );
+		@ $result = mysqli_real_connect( $conn, $host, '', '' );
+
+		if( $result ) {
+			return $conn;
+		} else{
+			return false;
+		}
 	}
 
 	/**

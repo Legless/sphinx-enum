@@ -22,24 +22,25 @@
 	}
 
 	echo "Sphinx enumerator \n";
-	echo "Usage: php sphinx-enum.php -target=(host or file) [-p=9307] [-edmi] [...] [-loot=dir] \n";
+	echo "Usage: php sphinx-enum.php -target=(host or file) [-p=9306] [-edmi] [...] [-loot=dir] \n";
 	echo "       php sphinx-enum.php -h for help \n";
 	echo "\n";
 
 	if( in_array( 'h', $flags ) ) {
 		echo "\n";
 		echo "HELP: \n";
-		echo "        -h - this help \n";
-		echo "  -target= - host, ip or file with host list \n";
-		echo "        -p - port, default 9306 \n";
-		echo "        -m - get server meta information \n";
-		echo "        -e - enum tables/indexes \n";
-		echo "        -d - describe index structure, requires -e \n";
-		echo "        -i - get index meta information, requires -e \n";
-		echo "    -loot= - directory to save index contents, dont save if not specified, \n";
-		echo "             [!] files will be overwritten \n";
-		echo "   -limit= - limit row count for looting for each index, default - 0 (loot all index) \n";
-		echo "   -batch= - set batch size for looting, default=1000 \n";
+		echo "          -h - this help \n";
+		echo "    -target= - host, ip or file with host list \n";
+		echo "          -p - port, default 9306 \n";
+		echo "          -m - get server meta information \n";
+		echo "          -e - enum tables/indexes \n";
+		echo "          -d - describe index structure, requires -e \n";
+		echo "          -i - get index meta information, requires -e \n";
+		echo "      -loot= - directory to save index contents, dont save if not specified, \n";
+		echo "               [!] files will be overwritten \n";
+		echo "     -limit= - limit row count for looting for each index, default - 0 (loot all index) \n";
+		echo "     -batch= - set batch size for looting, default=1000 \n";
+		echo "   -timeout= - set connect/query wait timeout in seconds, default=5 \n";
 		echo "\n";
 		echo "\n";
 		die( );
